@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<title>Blog — MemoryAgent</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Instrument+Serif:ital@0;1&display=swap');
+
+:root {
+  --bg-deep: #0a0a0f;
+  --bg-surface: #12121a;
+  --bg-elevated: #1a1a26;
+  --bg-card: #16161f;
+  --text-primary: #e8e6e3;
+  --text-secondary: #8a8a9a;
+  --text-muted: #55556a;
+  --accent: #7af5ca;
+  --accent-dim: #3a7a62;
+  --accent-glow: rgba(122, 245, 202, 0.15);
+  --accent-warm: #f5c87a;
+  --accent-warm-dim: #7a6a3a;
+  --border: #2a2a3a;
+  --border-subtle: #1e1e2e;
+  --mono: 'JetBrains Mono', monospace;
+  --serif: 'Instrument Serif', Georgia, serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent-dim) var(--bg-deep);
+}
+
+body {
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  font-family: var(--mono);
+  font-weight: 300;
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* ═══════════════════════════════════════════
+   NAVIGATION
+   ═══════════════════════════════════════════ */
+nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  padding: 1rem 0;
+  background: rgba(10, 10, 15, 0.8);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border-subtle);
+  transform: translateY(-100%);
+  animation: nav-slide 0.6s ease 0.3s forwards;
+}
+
+@keyframes nav-slide {
+  to { transform: translateY(0); }
+}
+
+nav .container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.nav-logo {
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+}
+
+.nav-logo a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.nav-logo span {
+  color: var(--text-muted);
+  font-weight: 300;
+}
+
+.nav-links {
+  display: flex;
+  gap: 2rem;
+  list-style: none;
+}
+
+.nav-links a {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  text-decoration: none;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  transition: color 0.3s;
+}
+
+.nav-links a:hover,
+.nav-links a.active {
+  color: var(--accent);
+}
+
+/* ═══════════════════════════════════════════
+   LAYOUT
+   ═══════════════════════════════════════════ */
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 clamp(1.5rem, 4vw, 3rem);
+}
+
+/* ═══════════════════════════════════════════
+   BLOG HEADER
+   ═══════════════════════════════════════════ */
+.blog-header {
+  padding-top: clamp(8rem, 15vh, 12rem);
+  padding-bottom: clamp(3rem, 6vh, 5rem);
+  position: relative;
+  overflow: hidden;
+}
+
+.blog-header::before {
+  content: '';
+  position: absolute;
+  top: -40%;
+  left: -10%;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+  opacity: 0.3;
+}
+
+.blog-header .container {
+  position: relative;
+  z-index: 1;
+}
+
+.blog-header-label {
+  font-size: 0.6rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--accent-dim);
+  margin-bottom: 1.5rem;
+  opacity: 0;
+  animation: fade-up 0.8s ease 0.4s forwards;
+}
+
+.blog-header h1 {
+  font-family: var(--serif);
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  font-weight: 400;
+  line-height: 1.15;
+  max-width: 800px;
+  opacity: 0;
+  animation: fade-up 0.8s ease 0.6s forwards;
+}
+
+.blog-header h1 em {
+  font-style: italic;
+  color: var(--accent);
+}
+
+.blog-header-meta {
+  margin-top: 2rem;
+  display: flex;
+  gap: 2rem;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+  opacity: 0;
+  animation: fade-up 0.8s ease 0.8s forwards;
+}
+
+.blog-header-meta span::before {
+  content: '';
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--accent-dim);
+  margin-right: 0.6rem;
+  vertical-align: middle;
+}
+
+/* ═══════════════════════════════════════════
+   ARTICLE BODY
+   ═══════════════════════════════════════════ */
+.article {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 clamp(1.5rem, 4vw, 3rem) clamp(4rem, 10vh, 8rem);
+}
+
+.article > * {
+  opacity: 0;
+  animation: fade-up 0.6s ease forwards;
+}
+
+.article > *:nth-child(1) { animation-delay: 0.9s; }
+.article > *:nth-child(2) { animation-delay: 0.95s; }
+.article > *:nth-child(3) { animation-delay: 1s; }
+.article > *:nth-child(n+4) { opacity: 1; animation: none; }
+
+.article blockquote {
+  border-left: 2px solid var(--accent-dim);
+  padding: 1rem 0 1rem 1.5rem;
+  margin: 2.5rem 0;
+  font-family: var(--serif);
+  font-size: 1.3rem;
+  font-style: italic;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.article h2 {
+  font-family: var(--serif);
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
+  font-weight: 400;
+  margin-top: 4rem;
+  margin-bottom: 1.2rem;
+  line-height: 1.25;
+}
+
+.article h2 em {
+  font-style: italic;
+  color: var(--accent);
+}
+
+.article h3 {
+  font-size: 0.95rem;
+  font-weight: 500;
+  margin-top: 2.5rem;
+  margin-bottom: 0.8rem;
+  letter-spacing: 0.02em;
+}
+
+.article p {
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  margin-bottom: 1.2rem;
+  line-height: 1.9;
+}
+
+.article strong {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.article a {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px solid var(--accent-dim);
+  transition: border-color 0.3s;
+}
+
+.article a:hover {
+  border-color: var(--accent);
+}
+
+.article ul, .article ol {
+  margin: 1rem 0 1.5rem 1.2rem;
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+}
+
+.article li {
+  margin-bottom: 0.5rem;
+  line-height: 1.8;
+}
+
+.article li::marker {
+  color: var(--accent-dim);
+}
+
+/* Tables */
+.article table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0 2rem;
+  font-size: 0.8rem;
+}
+
+.article th,
+.article td {
+  padding: 0.8rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.article th {
+  color: var(--text-muted);
+  font-weight: 400;
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.article td {
+  color: var(--text-secondary);
+}
+
+.article td:first-child {
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.article tr:hover td {
+  background: rgba(255,255,255,0.015);
+}
+
+/* Code blocks */
+.article pre {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 3px;
+  padding: 1.5rem;
+  margin: 1.5rem 0 2rem;
+  overflow-x: auto;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  line-height: 1.8;
+  color: var(--text-secondary);
+}
+
+.article code {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  background: var(--bg-elevated);
+  padding: 0.12rem 0.45rem;
+  border-radius: 2px;
+  color: var(--accent);
+  border: 1px solid var(--border-subtle);
+}
+
+.article pre code {
+  background: none;
+  padding: 0;
+  border: none;
+  color: inherit;
+  font-size: inherit;
+}
+
+/* Horizontal rule */
+.article hr {
+  border: none;
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--border), transparent);
+  margin: 3rem auto;
+  max-width: 200px;
+}
+
+/* Section dividers within article */
+.article .section-break {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: 3.5rem 0 2.5rem;
+  font-size: 0.6rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--accent-dim);
+}
+
+.article .section-break::before,
+.article .section-break::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border-subtle);
+}
+
+/* Callout */
+.callout {
+  background: linear-gradient(135deg, rgba(122,245,202,0.04) 0%, var(--bg-surface) 100%);
+  border: 1px solid var(--accent-dim);
+  border-radius: 3px;
+  padding: 1.5rem 2rem;
+  margin: 2rem 0;
+}
+
+.callout p {
+  color: var(--text-primary);
+  margin-bottom: 0;
+}
+
+.callout p:first-child {
+  font-weight: 500;
+  font-size: 0.85rem;
+  color: var(--accent);
+  margin-bottom: 0.5rem;
+}
+
+/* Architecture diagram in article */
+.article .diagram {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 3px;
+  padding: 2rem;
+  margin: 2rem 0;
+  font-size: 0.78rem;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  text-align: center;
+  overflow-x: auto;
+}
+
+.article .diagram pre {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  text-align: left;
+  display: inline-block;
+}
+
+/* End matter */
+.article-end {
+  margin-top: 4rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--border-subtle);
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-style: italic;
+  line-height: 1.8;
+}
+
+/* ═══════════════════════════════════════════
+   FOOTER
+   ═══════════════════════════════════════════ */
+footer {
+  padding: 3rem 0;
+  border-top: 1px solid var(--border-subtle);
+}
+
+footer .container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.footer-text {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.footer-links {
+  display: flex;
+  gap: 1.5rem;
+  list-style: none;
+}
+
+.footer-links a {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: color 0.3s;
+}
+
+.footer-links a:hover {
+  color: var(--accent);
+}
+
+/* ═══════════════════════════════════════════
+   ANIMATIONS
+   ═══════════════════════════════════════════ */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ═══════════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════════ */
+@media (max-width: 900px) {
+  .nav-links { display: none; }
+}
+
+@media (max-width: 600px) {
+  .blog-header-meta { flex-direction: column; gap: 0.5rem; }
+  footer .container { flex-direction: column; gap: 1rem; text-align: center; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAVIGATION -->
+<nav>
+  <div class="container">
+    <div class="nav-logo"><a href="index.html">MemoryAgent</a> <span>/ blog</span></div>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="blog.html" class="active">Blog</a></li>
+      <li><a href="index.html#commands">Commands</a></li>
+      <li><a href="index.html#install">Install</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- BLOG HEADER -->
+<header class="blog-header">
+  <div class="container">
+    <p class="blog-header-label">Blog</p>
+    <h1>Memory as File: Letting Coding Agents Manage Their Own <em>Memory</em></h1>
+    <div class="blog-header-meta">
+      <span>February 2026</span>
+      <span>12 min read</span>
+      <span>Concepts &amp; Architecture</span>
+    </div>
+  </div>
+</header>
+
+<!-- ARTICLE -->
+<article class="article">
+
+  <blockquote>What happens when an AI coding assistant doesn't just write code, but also manages its own "working memory"?</blockquote>
+
+  <h2>Starting with Coding Agents</h2>
+
+  <p>Since 2025, a new category of tools has been reshaping how developers work — <strong>Coding Agents</strong>.</p>
+
+  <p>These are not traditional AI chatbots. You don't need to copy-paste code snippets or manually apply suggestions. You simply describe the task, and the agent <strong>autonomously</strong> reads code, makes edits, runs tests, and fixes bugs in a loop until the task is done.</p>
+
+  <table>
+    <thead>
+      <tr><th></th><th>Traditional AI Chat</th><th>Coding Agent</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Interaction</td><td>You ask, it answers, done</td><td>Autonomous loop, multi-step</td></tr>
+      <tr><td>File ops</td><td>Cannot</td><td>Read, write, edit files</td></tr>
+      <tr><td>Commands</td><td>Cannot</td><td>Run shell commands</td></tr>
+      <tr><td>Awareness</td><td>Cannot</td><td>Observes output, decides next step</td></tr>
+    </tbody>
+  </table>
+
+  <p>A Coding Agent is built on three pillars:</p>
+
+  <ol>
+    <li><strong>LLM brain</strong> — understands tasks, reasons about solutions</li>
+    <li><strong>Tools</strong> — lets the LLM take action in the real environment</li>
+    <li><strong>Loop</strong> — continuous "think &rarr; act &rarr; observe" cycle until completion</li>
+  </ol>
+
+  <p>Major products in this space include Anthropic's <strong>Claude Code</strong>, the open-source <strong>OpenCode</strong>, as well as Cursor Agent, Aider, Cline, and others. What they all share: they equip an LLM with a set of <strong>file manipulation and command execution tools</strong>, transforming the model from "can only chat" to "can actually do work."</p>
+
+  <p>Taking Claude Code as an example, its built-in tools include:</p>
+
+  <table>
+    <thead>
+      <tr><th>Tool</th><th>What it does</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Read / Write / Edit</td><td>Read, create, and precisely modify files</td></tr>
+      <tr><td>Glob / Grep</td><td>Find files by pattern, search code content</td></tr>
+      <tr><td>Bash</td><td>Execute shell commands</td></tr>
+      <tr><td>Task</td><td>Spawn sub-agents to handle subtasks</td></tr>
+      <tr><td>WebSearch / WebFetch</td><td>Search the internet, fetch web content</td></tr>
+    </tbody>
+  </table>
+
+  <p>Looking at this table, a natural idea emerges &mdash;</p>
+
+  <h2>An Observation: Coding Agents Are Natural <em>Memory Managers</em></h2>
+
+  <p>If we treat the <strong>conversation between a user and an agent as "memory"</strong>, and <strong>persist that memory as files</strong>, then a Coding Agent already has everything it needs to manage that memory:</p>
+
+  <table>
+    <thead>
+      <tr><th>Memory Operation</th><th>Corresponding Tool</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Recall</td><td>Read / Grep / Glob</td></tr>
+      <tr><td>Record</td><td>Write</td></tr>
+      <tr><td>Update</td><td>Edit</td></tr>
+      <tr><td>Search</td><td>Grep / Glob</td></tr>
+      <tr><td>Organize &amp; Summarize</td><td>Read + Edit</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout">
+    <p>The key insight</p>
+    <p>No need to reinvent the wheel. Memory management is essentially file management, and Coding Agents are naturally the best file managers around.</p>
+  </div>
+
+  <p>This is the core idea behind <strong>Memory as File</strong>:</p>
+
+  <div class="diagram">
+<pre>User &harr; Agent conversation
+        &darr; persisted as
+    Files (Markdown)
+        &darr; managed via
+    Coding Agent's built-in Tools</pre>
+  </div>
+
+  <h3>Why This Works</h3>
+
+  <ul>
+    <li><strong>Zero additional infrastructure</strong> — no databases, vector stores, or external services needed</li>
+    <li><strong>Human-readable and auditable</strong> — memory is just Markdown files; users can inspect and manually edit anytime</li>
+    <li><strong>Native version control</strong> — put it in a Git repo and the full history of memory changes is transparent</li>
+    <li><strong>Reuses existing capabilities</strong> — no new tools to build; the Coding Agent's current toolset is sufficient</li>
+  </ul>
+
+  <h3>Existing Validation</h3>
+
+  <p>This is not purely hypothetical. Claude Code already ships with a minimal Memory as File mechanism: <strong>MEMORY.md</strong>.</p>
+
+  <p>Each project gets a dedicated directory at <code>~/.claude/projects/&lt;path&gt;/memory/</code>, where <code>MEMORY.md</code> is automatically loaded into the system prompt of every new conversation. The agent can use Write/Edit tools to persist information, and the content survives across sessions.</p>
+
+<pre>Session 1: User says "This project uses bun, not npm"
+            &rarr; Agent writes to MEMORY.md: "Package manager: use bun"
+
+Session 2: New conversation starts
+            &rarr; System prompt automatically includes MEMORY.md
+            &rarr; Agent knows to use bun without being told again</pre>
+
+  <p>This proves that "file as memory" works. But it's also minimal — a single file, 200-line limit, loaded in full, no structure. Which leads to a deeper question.</p>
+
+  <div class="section-break">The real question</div>
+
+  <h2>Who Should Manage the Agent's <em>Attention?</em></h2>
+
+  <p>MEMORY.md's approach is to dump all memory into the context window at once. This works for small projects, but hits a wall as memory grows and tasks become more complex.</p>
+
+  <p>An LLM's context window is a <strong>finite and expensive</strong> resource. Current approaches sit at two extremes:</p>
+
+  <table>
+    <thead>
+      <tr><th>Approach</th><th>Problem</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Load everything</td><td>Context overflows, tokens wasted, attention diluted, quality degrades</td></tr>
+      <tr><td>User specifies</td><td>Requires the user to decide what to load — high cognitive burden</td></tr>
+    </tbody>
+  </table>
+
+  <p>Is there a third way?</p>
+
+  <p><strong>Let the agent manage its own working memory.</strong></p>
+
+  <h2>Agent-Driven <em>Memory Management</em></h2>
+
+  <p>Humans don't load all their knowledge into working memory at once. When writing frontend code, you're not simultaneously thinking about database index optimization. When debugging an API, you're not recalling CSS layout tricks. Human working memory is <strong>loaded on demand and released when done</strong>.</p>
+
+  <p>Coding Agents should work the same way.</p>
+
+  <p>Consider a large task — "Build a full-stack application" — that spans multiple knowledge domains, but each subtask only needs a subset:</p>
+
+<pre>Task: "Build a full-stack application"
+├── Subtask 1: Database design
+│   → Load: SQL skill, DB schema memory
+│   → Unload: frontend-related memory
+├── Subtask 2: API development
+│   → Load: REST skill, auth memory
+│   → Unload: SQL skill (no longer needed)
+├── Subtask 3: Frontend pages
+│   → Load: React skill, UI memory
+│   → Unload: API skill
+└── ...</pre>
+
+  <h3>Architecture</h3>
+
+  <div class="diagram">
+<pre>┌─────────────────────────────────────┐
+│         Long-term Memory            │
+│   (File system — all memory files)  │
+│   skills/, mcp/, project-context/   │
+│   ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐   │
+│   │ A │ │ B │ │ C │ │ D │ │ E │   │
+│   └───┘ └───┘ └───┘ └───┘ └───┘   │
+└─────────────┬───────────────────────┘
+              │ Agent decides load/unload
+              ▼
+┌─────────────────────────────────────┐
+│         Working Memory              │
+│   (Current context window)          │
+│   ┌───┐ ┌───┐                       │
+│   │ B │ │ D │  ← Only what the      │
+│   └───┘ └───┘    current subtask    │
+│                   needs             │
+└─────────────────────────────────────┘</pre>
+  </div>
+
+  <ul>
+    <li><strong>Long-term Memory</strong>: all memory files in the file system, unlimited capacity</li>
+    <li><strong>Working Memory</strong>: current context window, limited capacity, requires careful management</li>
+  </ul>
+
+  <h3>How Does the Agent Know What to Load?</h3>
+
+  <table>
+    <thead>
+      <tr><th>Approach</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Index file</td><td>Maintain an <code>index.md</code> with summaries. Agent reads the index first, then decides which files to load</td></tr>
+      <tr><td>Directory conventions</td><td>Structured directories (<code>skills/database/</code>, <code>skills/frontend/</code>) for quick Glob-based lookup</td></tr>
+      <tr><td>Metadata tags</td><td>Tags in each memory file header; the agent filters by tag using Grep</td></tr>
+    </tbody>
+  </table>
+
+  <h3>How Is "Unloading" Implemented?</h3>
+
+  <p>Under current LLM architectures, content cannot be truly removed from the context window once added. But there are practical workarounds:</p>
+
+  <table>
+    <thead>
+      <tr><th>Approach</th><th>Feasibility</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Sub-agent (fork)</td><td>Best</td><td>Each subtask spawns a new sub-agent with a naturally clean context</td></tr>
+      <tr><td>Conversation split</td><td>Viable</td><td>Split large tasks into multiple conversations, loading only relevant memory</td></tr>
+      <tr><td>Explicit prompting</td><td>Marginal</td><td>Tell the agent "ignore the following" — unstable results</td></tr>
+    </tbody>
+  </table>
+
+  <p>The <strong>sub-agent model</strong> aligns best with existing architectures. In Claude Code, the <code>Task</code> tool already supports spawning sub-agents:</p>
+
+<pre>Main Agent (coordinator)
+├── Analyzes the large task, breaks it into subtasks
+├── Determines which memory each subtask needs
+└── Spawns Sub-Agent (Task tool)
+     → Injects only the relevant memory file contents
+     → Sub-agent works in a clean context
+     → Returns results to the main agent</pre>
+
+  <div class="section-break">From prototype to vision</div>
+
+  <h2>From MEMORY.md to a <em>Complete Solution</em></h2>
+
+  <table>
+    <thead>
+      <tr><th></th><th>Claude Code's MEMORY.md</th><th>Full Memory as File</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Essence</td><td>File as memory</td><td>File as memory</td></tr>
+      <tr><td>Scale</td><td>Single file, 200-line limit</td><td>Multi-file, multi-directory, unlimited</td></tr>
+      <tr><td>Structure</td><td>Unstructured</td><td>Organized by topic, tags, and indexes</td></tr>
+      <tr><td>Retrieval</td><td>Loaded in full, no search needed</td><td>Grep/Glob or semantic search</td></tr>
+      <tr><td>Manager</td><td>User / Agent passively records</td><td>Agent autonomously decides what to load and unload</td></tr>
+    </tbody>
+  </table>
+
+  <p>MEMORY.md is the minimal viable proof. The complete solution answers a fundamental question:</p>
+
+  <blockquote>Who should be responsible for managing the agent's attention?</blockquote>
+
+  <p>The answer shifts from "the user manages manually" to "the agent manages autonomously." This is a critical step toward truly autonomous agents.</p>
+
+  <h2>Open <em>Questions</em></h2>
+
+  <p>Several questions remain worth exploring:</p>
+
+  <ol>
+    <li><strong>Memory structure</strong> — Store raw conversation transcripts, or distilled summaries? Raw is complete but noisy; distilled is concise but loses information.</li>
+    <li><strong>Memory granularity</strong> — One file per conversation? Split by topic? By timeline? Granularity determines retrieval efficiency.</li>
+    <li><strong>Semantic retrieval</strong> — Grep/Glob uses keyword matching, which may miss semantically similar but differently worded memories. Do we need vector search? Or is the LLM's own comprehension sufficient?</li>
+    <li><strong>Memory lifecycle</strong> — How to handle outdated memory? Automatic decay, agent-initiated cleanup, or manual user management?</li>
+    <li><strong>Active vs. passive</strong> — Should the agent wait for the user to say "remember this," or proactively decide which information is worth persisting?</li>
+  </ol>
+
+  <h2>Conclusion</h2>
+
+  <p>The emergence of Coding Agents has evolved LLMs from "chat tools" into "programming partners." But their memory capabilities remain primitive — either no memory at all, or loading a single small file in full.</p>
+
+  <p><strong>Memory as File</strong> proposes a simple yet powerful abstraction: memory is files, file management is memory management, and Coding Agents happen to be the best file managers available.</p>
+
+  <p>Building on this, <strong>Agent-driven Memory Management</strong> takes it further by letting agents autonomously manage their own working memory — loading on demand, unloading when done, efficiently utilizing limited attention resources just as humans do.</p>
+
+  <p>This requires no additional infrastructure, no new tools — just <strong>a shift in perspective</strong> on the capabilities Coding Agents already possess.</p>
+
+  <hr>
+
+  <p class="article-end">The ideas in this post originated from observations and experiments while using Claude Code for day-to-day development. All concepts discussed (Memory as File, Agent-driven Memory Management) are still in the early conceptual stage. Discussion and feedback are welcome.</p>
+
+</article>
+
+<!-- FOOTER -->
+<footer>
+  <div class="container">
+    <p class="footer-text">MemoryAgent &mdash; Memory as File</p>
+    <ul class="footer-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="https://github.com/IIIIQIIII/MemoryAgent" target="_blank">GitHub</a></li>
+      <li><a href="https://github.com/IIIIQIIII/MemoryAgent#documentation" target="_blank">Documentation</a></li>
+    </ul>
+  </div>
+</footer>
+
+</body>
+</html>
